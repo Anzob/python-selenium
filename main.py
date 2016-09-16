@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, sys, locale, _thread
+import os, sys, locale, _thread, re
 from selenium import webdriver
 from xvfbwrapper import Xvfb
 
@@ -35,6 +35,15 @@ class SetProxy():
 		driver.close()
 		self.xvfb.stop()
 
+	def GetIPFromPageContent(self, pagecontent):
+		ippattern = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', re.IGNORECASE)
+		print(ippattern.match(pagecontent))
+		
+	def GetPageContent(self, driver, pageurl):
+		driver.get(pageurl)		
+		page_source = driver.page_source
+		return page_source
+		
 	def GetProxyList(self):
 		self.xvfb = Xvfb(width=1280, height=780, colordepth=16)
 		self.xvfb.start()
@@ -65,7 +74,10 @@ class SetProxy():
 		print('len {0}', len(lst), type(lst))
 		for li in lst:
 			fh.write((li.get_attribute('href') + "\n").encode())
-			#print(li.get_attribute('href'))
+			href_data = li.get_attribute('href')
+			print(href_data)
+			page_content = self.GetPageContent(driver, href_data)
+			#self.GetIPFromPageContent(page_content.string)
 			##attrs = driver.execute_script('var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;', li)
 			##print(attrs)
 		fh.close()
