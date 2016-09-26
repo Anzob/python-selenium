@@ -8,6 +8,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from xvfbwrapper import Xvfb
 
 class SetProxy():
+	def __init__(self):
+		self.ip_address = []
+
 	def SetProxyFunc(self):
 		self.xvfb = Xvfb(width=1280, height=780, colordepth=16)
 		self.xvfb.start()
@@ -44,7 +47,8 @@ class SetProxy():
 		print(len(ippattern), type(ippattern))
 		if(len(ippattern) > 0):
 			for ip in ippattern:
-				print(ip)
+				self.ip_address.append(ip)
+				#print(ip)
 		#print(pagecontent)
 		
 	def GetPageContent(self, pageurl):
@@ -98,9 +102,15 @@ class SetProxy():
 			##attrs = driver.execute_script('var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;', li)
 			##print(attrs)
 		fh.close()
-
+		
 		driver.close()
 		self.xvfb.stop()
+		
+		fh = open('/home/alex/py/ip_address.txt', "w+")
+		#fh.write((self.ip_address).encode())
+		fh.write("\n".join(str(line) for line in self.ip_address))
+		fh.close()
+		
 		print("stop parse body")
 
 class PageWrapper():
