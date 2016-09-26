@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 import os, sys, locale, _thread, re
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from xvfbwrapper import Xvfb
 
 class SetProxy():
@@ -35,49 +38,63 @@ class SetProxy():
 		driver.close()
 		self.xvfb.stop()
 
-	def GetIPFromPageContent(self, pagecontent):
-		ippattern = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', re.IGNORECASE)
-		print(ippattern.match(pagecontent))
+	def GetIPFromPageContent(self, href_data):
+		pagecontent = self.GetPageContent(href_data)
+		ippattern = re.findall(r'(?:[0-9]{1,3}\.){3}[0-9]{1,3}', pagecontent)
+		print(len(ippattern), type(ippattern))
+		if(len(ippattern) > 0):
+			for ip in ippattern:
+				print(ip)
+		#print(pagecontent)
 		
-	def GetPageContent(self, driver, pageurl):
-		driver.get(pageurl)		
-		page_source = driver.page_source
-		return page_source
+	def GetPageContent(self, pageurl):
+		driver = webdriver.Firefox()
+		driver.implicitly_wait(30)
+		driver.get(pageurl)
+		content = driver.page_source
+		#print(driver.title)
+		driver.close()
+		return content
 		
 	def GetProxyList(self):
 		self.xvfb = Xvfb(width=1280, height=780, colordepth=16)
 		self.xvfb.start()
 
 		print("start parse body")
-		"""
-		PROXY = "178.62.118.19:8118"
-
-		webdriver.DesiredCapabilities.CHROME['proxy']={
-		    "httpProxy":PROXY,
-		    "ftpProxy":PROXY,
-		    "sslProxy":PROXY,
-		    "noProxy":None,
-		    "proxyType":"MANUAL",
-		    "autodetect":False
-		}
-		"""
-		driver = webdriver.Chrome()
-		driver.implicitly_wait(20)
+		
+		driver = webdriver.Firefox()
 		driver.get('https://www.google.com/?gfe_rd=cr&gws_rd=ssl,cr&fg=1#safe=off&q=proxy+list')
+		print(driver.title)
+		
+		try:
+			element = WebDriverWait(driver, 20).until(
+				EC.presence_of_element_located((By.ID, "lfootercc"))
+			)
+			print("Wait success")
+		except:
+			print("Unexpected error:", sys.exc_info()[0])
+			raise
 
+		#print(element)
+		print("start parsing")
+		'''fh = open('/home/alex/py/google.txt', "wb+")
+		fh.write((driver.page_source).encode())
+		fh.close()'''
+		
 		fh = open('/home/alex/py/proxy_list.txt', "wb+")
 		##sbody = driver.find_element_by_xpath("/*")
-		#print(driver.page_source)
-		"""lst = list(driver.find_elements_by_xpath('/h3[@class="r"]'))"""
+		
+		#lst = list(driver.find_elements_by_xpath('/h3[@class="r"]'))
 		#lst = driver.find_elements_by_css_selector('h3.r')
-		lst = driver.find_elements_by_xpath("//h3[@class='r']/a")
-		print('len {0}', len(lst), type(lst))
+		lst = list(driver.find_elements_by_xpath("//h3[@class='r']/a"))
+		#print('len ', len(lst), type(lst))
+		print('len ', len(lst))
 		for li in lst:
 			fh.write((li.get_attribute('href') + "\n").encode())
 			href_data = li.get_attribute('href')
 			print(href_data)
-			page_content = self.GetPageContent(driver, href_data)
-			#self.GetIPFromPageContent(page_content.string)
+			#print(self.page_content)
+			self.GetIPFromPageContent(href_data)
 			##attrs = driver.execute_script('var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;', li)
 			##print(attrs)
 		fh.close()
